@@ -38,9 +38,24 @@ impl Platform {
         let context = Context::default();
         let mut fonts = FontDefinitions::default();
 
+        use font_kit::source::SystemSource;
+        use font_kit::family_name::FamilyName;
+        use font_kit::handle::Handle;
+
+        let font = SystemSource::new()
+            .select_best_match(&[FamilyName::Title("Jetbrains Mono".to_string())], &Default::default())
+            .unwrap();
+
+        let path = match font {
+            Handle::Path { path, .. } => path,
+            _ => Default::default(),
+        };
+
+        let file = std::fs::read(path).unwrap();
+
         fonts.font_data.insert(
-            "liga".to_owned(),
-            FontData::from_static(include_bytes!("../fonts/LigaSFMonoNerdFont-Regular.ttf")),
+            "mono".to_owned(),
+            FontData::from_owned(file),
         );
 
         fonts.font_data.insert(
@@ -48,8 +63,8 @@ impl Platform {
             FontData::from_static(include_bytes!("../fonts/IcoMoon.ttf")),
         );
 
-        fonts.families.get_mut(&FontFamily::Monospace).unwrap().push("icons".to_owned());
-        fonts.families.get_mut(&FontFamily::Monospace).unwrap().push("liga".to_owned());
+        fonts.families.entry(FontFamily::Monospace).or_default().insert(0, "mono".to_owned());
+        fonts.families.entry(FontFamily::Monospace).or_default().insert(0, "icons".to_owned());
 
         context.set_fonts(fonts);
         context.set_style(crate::style::EGUI.clone());
